@@ -5,7 +5,7 @@ use actix_web::{
 
 use auth_service::core::{
     cacher::Cacher, hasher::Hasher, repository::Repository, secret_generator::SecretGenerator,
-    service::Service,
+    service::{Service, VerifySecretRequest},
 };
 
 use reqwest::StatusCode;
@@ -57,4 +57,19 @@ where
             })
         }
     }
+}
+
+
+pub async fn verify_token<R, C, H, S>(
+    service: Data<Service<R, C, H, S, String>>,
+    Query(params): Query<LoginByVerificationCodeParams>,
+    verification_code_service: Data<VerificationCodeServiceAddress>,
+) -> HttpResponse
+where
+    R: Repository<String> + Clone,
+    C: Cacher<String> + Clone,
+    H: Hasher + Clone,
+    S: SecretGenerator + Clone,
+{
+    service.verify_secret(VerifySecretRequest{})
 }
