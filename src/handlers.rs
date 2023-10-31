@@ -1,75 +1,65 @@
 use actix_web::{
-    web::{Data, Query},
-    HttpResponse,
+    error::ErrorInternalServerError,
+    web::{Data, Json, Query},
+    Error,
 };
 
 use auth_service::core::{
-    cacher::Cacher, hasher::Hasher, repository::Repository, secret_generator::SecretGenerator,
-    service::{Service, VerifySecretRequest},
+    hasher::Hasher, repository::Repository, service::Service, token_manager::TokenManager,
 };
 
-use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 
-use crate::VerificationCodeServiceAddress;
-
 #[derive(Debug, Deserialize)]
-pub struct LoginByVerificationCodeParams {
+pub struct LoginByPasswordParams {
     phone: String,
-    code: String,
+    password: String,
 }
 
 #[derive(Debug, Serialize)]
-pub struct LoginByVerificationResp {
+pub struct LoginByPasswordResp {
     token: String,
 }
 
-pub async fn login_by_verification_code<R, C, H, S>(
-    _service: Data<Service<R, C, H, S, String>>,
-    Query(params): Query<LoginByVerificationCodeParams>,
-    verification_code_service: Data<VerificationCodeServiceAddress>,
-) -> HttpResponse
+pub async fn login_by_password<R, H, T>(
+    service: Data<Service<R, H, T>>,
+    Query(params): Query<LoginByPasswordParams>,
+) -> Result<Json<LoginByPasswordResp>, Error>
 where
-    R: Repository<String> + Clone,
-    C: Cacher<String> + Clone,
+    R: Repository + Clone,
     H: Hasher + Clone,
-    S: SecretGenerator + Clone,
+    T: TokenManager + Clone,
 {
-    match reqwest::Client::new()
-        .get(format!(
-            "http://{}/{}/{}",
-            verification_code_service.0, params.phone, params.code
-        ))
-        .send()
-        .await
-    {
-        Err(err) => HttpResponse::InternalServerError().body(err.to_string()),
-        Ok(res) => {
-            let status = res.status();
-            if status != StatusCode::OK {
-                match res.text().await {
-                    Err(err) => return HttpResponse::InternalServerError().body(err.to_string()),
-                    Ok(text) => return HttpResponse::build(status).body(text),
-                }
-            }
-            HttpResponse::Ok().json(LoginByVerificationResp {
-                token: "test".into(),
-            })
-        }
-    }
+    Ok(Json(LoginByPasswordResp {
+        token: service
+            .login_by_password(&params.phone, &params.password)
+            .await
+            .map_err(|e| ErrorInternalServerError(e))?,
+    }))
 }
 
+#[derive(Debug, Deserialize)]
+pub struct VerifyTokenParams {
+    token: String,
+}
 
-pub async fn verify_token<R, C, H, S>(
-    service: Data<Service<R, C, H, S, String>>,
-    Query(params): Query<LoginByVerificationCodeParams>,
-    verification_code_service: Data<VerificationCodeServiceAddress>,
-) -> HttpResponse
+#[derive(Debug, Serialize)]
+pub struct VerifyTokenResp {
+    id: String,
+}
+
+pub async fn verify_token<R, H, T>(
+    service: Data<Service<R, H, T>>,
+    Query(params): Query<VerifyTokenParams>,
+) -> Result<Json<VerifyTokenResp>, Error>
 where
-    R: Repository<String> + Clone,
-    C: Cacher<String> + Clone,
+    R: Repository + Clone,
     H: Hasher + Clone,
-    S: SecretGenerator + Clone,
+    T: TokenManager + Clone,
 {
-    service.verify_secret(VerifySecretRequest{})
+    let id = service
+        .verify_token(&params.token)
+        .await
+        .map_err(|e| ErrorInternalServerError(e))?;
+    Ok(Json(VerifyTokenResp { id }))
 }
