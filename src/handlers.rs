@@ -1,6 +1,6 @@
 use actix_web::{
-    error::ErrorInternalServerError,
-    web::{Data, Json, Query},
+    error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized},
+    web::{Data, Json, Path},
     Error,
 };
 
@@ -23,7 +23,7 @@ pub struct LoginByPasswordResp {
 
 pub async fn login_by_password<R, H, T>(
     service: Data<Service<R, H, T>>,
-    Query(params): Query<LoginByPasswordParams>,
+    Json(params): Json<LoginByPasswordParams>,
 ) -> Result<Json<LoginByPasswordResp>, Error>
 where
     R: Repository + Clone,
@@ -34,13 +34,8 @@ where
         token: service
             .login_by_password(&params.phone, &params.password)
             .await
-            .map_err(|e| ErrorInternalServerError(e))?,
+            .map_err(ErrorInternalServerError)?,
     }))
-}
-
-#[derive(Debug, Deserialize)]
-pub struct VerifyTokenParams {
-    token: String,
 }
 
 #[derive(Debug, Serialize)]
@@ -50,7 +45,7 @@ pub struct VerifyTokenResp {
 
 pub async fn verify_token<R, H, T>(
     service: Data<Service<R, H, T>>,
-    Query(params): Query<VerifyTokenParams>,
+    token: Path<(String,)>,
 ) -> Result<Json<VerifyTokenResp>, Error>
 where
     R: Repository + Clone,
@@ -58,8 +53,35 @@ where
     T: TokenManager + Clone,
 {
     let id = service
-        .verify_token(&params.token)
+        .verify_token(&token.0)
         .await
-        .map_err(|e| ErrorInternalServerError(e))?;
+        .map_err(ErrorUnauthorized)?;
     Ok(Json(VerifyTokenResp { id }))
+}
+
+#[derive(Debug, Deserialize)]
+pub struct SignupParams {
+    phone: String,
+    password: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct SignupResp {
+    token: String,
+}
+
+pub async fn signup<R, H, T>(
+    service: Data<Service<R, H, T>>,
+    Json(params): Json<SignupParams>,
+) -> Result<Json<SignupResp>, Error>
+where
+    R: Repository + Clone,
+    H: Hasher + Clone,
+    T: TokenManager + Clone,
+{
+    let token = service
+        .signup(&params.phone, &params.password)
+        .await
+        .map_err(ErrorInternalServerError)?;
+    Ok(Json(SignupResp { token }))
 }

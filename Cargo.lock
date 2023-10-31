@@ -283,7 +283,6 @@ dependencies = [
 [[package]]
 name = "auth-service"
 version = "0.1.0"
-source = "git+https://github.com/wangjun861205/auth-service.git#16b5a5a7f1055df41253df7f43a2b9dd0bdd2ca5"
 dependencies = [
  "actix-web",
  "anyhow",

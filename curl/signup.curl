@@ -1,0 +1,4 @@
+url=http://localhost:8002/signup
+request=POST
+header=Content-Type:application/json
+data=@signup.json

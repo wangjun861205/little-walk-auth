@@ -4,7 +4,7 @@ use std::io;
 
 use actix_web::{
     middleware::Logger,
-    web::{put, Data},
+    web::{get, post, put, Data},
     App, HttpServer,
 };
 use auth_service::{
@@ -52,14 +52,33 @@ async fn main() -> io::Result<()> {
 
     HttpServer::new(move || {
         let logger = Logger::new(&config.log_format);
-        App::new().wrap(logger).app_data(service.clone()).route(
-            "/login_by_password",
-            put().to(handlers::login_by_password::<
-                MongodbRepository,
-                ShaHasher,
-                JWTTokenManager<Hmac<Sha384>>,
-            >),
-        )
+        App::new()
+            .wrap(logger)
+            .app_data(service.clone())
+            .route(
+                "/login_by_password",
+                put().to(handlers::login_by_password::<
+                    MongodbRepository,
+                    ShaHasher,
+                    JWTTokenManager<Hmac<Sha384>>,
+                >),
+            )
+            .route(
+                "/signup",
+                post().to(handlers::signup::<
+                    MongodbRepository,
+                    ShaHasher,
+                    JWTTokenManager<Hmac<Sha384>>,
+                >),
+            )
+            .route(
+                "/verify_token/{id}",
+                get().to(handlers::verify_token::<
+                    MongodbRepository,
+                    ShaHasher,
+                    JWTTokenManager<Hmac<Sha384>>,
+                >),
+            )
     })
     .bind(config.server_address)?
     .run()
