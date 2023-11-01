@@ -7,8 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4.4.0"
-# auth-service = { git = "https://github.com/wangjun861205/auth-service.git" }
-auth-service = { path = "../auth-service" }
+auth-service = { git = "https://github.com/wangjun861205/auth-service.git" }
 dotenv = "0.15.0"
 env_logger = "0.10.0"
 hmac = "0.12.1"

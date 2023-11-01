@@ -1,5 +1,5 @@
 use actix_web::{
-    error::{ErrorForbidden, ErrorInternalServerError, ErrorUnauthorized},
+    error::{ErrorInternalServerError, ErrorUnauthorized},
     web::{Data, Json, Path},
     Error,
 };
@@ -84,4 +84,25 @@ where
         .await
         .map_err(ErrorInternalServerError)?;
     Ok(Json(SignupResp { token }))
+}
+
+#[derive(Debug, Serialize)]
+pub struct ExistsUserResp {
+    exists: bool,
+}
+
+pub async fn exists_user<R, H, T>(
+    service: Data<Service<R, H, T>>,
+    phone: Path<(String,)>,
+) -> Result<Json<ExistsUserResp>, Error>
+where
+    R: Repository + Clone,
+    H: Hasher + Clone,
+    T: TokenManager + Clone,
+{
+    let exists = service
+        .exists_user(&phone.to_owned().0)
+        .await
+        .map_err(ErrorInternalServerError)?;
+    Ok(Json(ExistsUserResp { exists }))
 }

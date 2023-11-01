@@ -79,6 +79,14 @@ async fn main() -> io::Result<()> {
                     JWTTokenManager<Hmac<Sha384>>,
                 >),
             )
+            .route(
+                "/exists_user/{phone}",
+                get().to(handlers::exists_user::<
+                    MongodbRepository,
+                    ShaHasher,
+                    JWTTokenManager<Hmac<Sha384>>,
+                >),
+            )
     })
     .bind(config.server_address)?
     .run()
