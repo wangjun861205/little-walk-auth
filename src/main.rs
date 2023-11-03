@@ -56,7 +56,7 @@ async fn main() -> io::Result<()> {
             .wrap(logger)
             .app_data(service.clone())
             .route(
-                "/login_by_password",
+                "/login",
                 put().to(handlers::login_by_password::<
                     MongodbRepository,
                     ShaHasher,
@@ -72,7 +72,7 @@ async fn main() -> io::Result<()> {
                 >),
             )
             .route(
-                "/verify_token/{id}",
+                "/tokens/{token}/verification",
                 get().to(handlers::verify_token::<
                     MongodbRepository,
                     ShaHasher,
@@ -80,7 +80,7 @@ async fn main() -> io::Result<()> {
                 >),
             )
             .route(
-                "/exists_user/{phone}",
+                "/phones/{phone}/exists",
                 get().to(handlers::exists_user::<
                     MongodbRepository,
                     ShaHasher,
