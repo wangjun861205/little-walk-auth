@@ -106,3 +106,24 @@ where
         .map_err(ErrorInternalServerError)?;
     Ok(Json(ExistsUserResp { exists }))
 }
+
+#[derive(Debug, Serialize)]
+pub struct GenerateTokenResp {
+    token: String,
+}
+
+pub async fn generate_token<R, H, T>(
+    service: Data<Service<R, H, T>>,
+    phone: Path<(String,)>,
+) -> Result<Json<GenerateTokenResp>, Error>
+where
+    R: Repository + Clone,
+    H: Hasher + Clone,
+    T: TokenManager + Clone,
+{
+    let token = service
+        .generate_token(&phone.to_owned().0)
+        .await
+        .map_err(ErrorInternalServerError)?;
+    Ok(Json(GenerateTokenResp { token }))
+}

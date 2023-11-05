@@ -80,6 +80,14 @@ async fn main() -> io::Result<()> {
                 >),
             )
             .route(
+                "/phones/{phone}/tokens",
+                put().to(handlers::generate_token::<
+                    MongodbRepository,
+                    ShaHasher,
+                    JWTTokenManager<Hmac<Sha384>>,
+                >),
+            )
+            .route(
                 "/phones/{phone}/exists",
                 get().to(handlers::exists_user::<
                     MongodbRepository,
