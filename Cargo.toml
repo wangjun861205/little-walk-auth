@@ -14,7 +14,7 @@ hmac = "0.12.1"
 jwt = "0.16.0"
 mongodb = "2.7.0"
 nb-from-env = "0.2.1"
-redis = { git = "https://github.com/redis-rs/redis-rs.git", version = "0.23.2", features = [
+redis = { git = "https://github.com/redis-rs/redis-rs.git", version = "0.24.0", features = [
     "tokio-comp",
 ] }
 reqwest = "0.11.22"
